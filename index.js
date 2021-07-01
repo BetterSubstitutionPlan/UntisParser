@@ -1,5 +1,5 @@
-var timetable = require("./timetable");
-var substitutionplan = require("./substitutionplan");
+const timetable = require("./timetable");
+const substitutionplan = require("./substitutionplan");
 
 module.exports = {
     parseTimetable: timetable.parse,
