@@ -18,17 +18,20 @@ function parse(html) {
 
     var data = [];
     var list = $('table.mon_list tr.list');
-    list = $('table.mon_list tr.list');
+    // Loop through each table row
     list.each((rowcnt, row) => {
         var rowData = {};
 
-        var columns = $(row).find("td")
+        // Find the columns and ignore empty ones
         var columns = $(row).find("td");
         if (columns.text() == "") return;
+        // Ignore columns that include "Keine Vertretungen" to have
+        // an empty array if there are no changes
         if (columns.text().includes("Keine Vertretungen")) return;
 
         columns.each((columncnt, column) => {
             var text = $(column).text();
+            // Clean the text by removing new lines, tabs, ...
             var cleantext = text.replace("\\n", "").replace(/[\s]*$/, "");
             var columntitle = titles[columncnt];
 
