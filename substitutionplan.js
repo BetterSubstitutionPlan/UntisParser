@@ -2,50 +2,56 @@ const cheerio = require('cheerio');
 const titles = ["klasse", "datum", "stunde", "lehrer", "vertreter", "fach", "raum", "art", "text"];
 
 function parse(html) {
-    // Load the html
-    var $ = cheerio.load(html);
-    var data = [];
     var infos = {};
 
-    title = $('.mon_title').text().split(" ");
-    infos.day = title[1]
-    infos.date = title[0]
-    infos.week = title[3]
-    infos.stand = "Stand" + $('.mon_head td').text().split("Stand")[1].replace("\\n", "").replace(/[\s]*$/, "");
+    // Load the html into cheerio
+    var $ = cheerio.load(html);
 
-    list = $('table.mon_list tr.list');
-    rowcnt = 0;
-    list.each(function () {
-        data[rowcnt] = {};
+    // Extract the date, weekday and a/b week from the title
+    var title = $('.mon_title').text().split(" ");
+    infos.date = title[0].split(".").reverse().map(x => (x.length < 2) ? "0" + x : x).join("-");
+    infos.day = title[1].replace(",", "");
+    infos.week = title[3];
 
-        var arr = $(this).find("td")
+    // Get the export timestamp
+    infos.timestamp = $('.mon_head td').text().split("Stand: ")[1].replace(/[\s\n]*$/g, "");
 
-        if (arr.text() == "") {
-            return;
-        }
+    var data = [];
+    var list = $('table.mon_list tr.list');
+    // Loop through each table row
+    list.each((rowcnt, row) => {
+        var rowData = {};
 
-        arr.each((spancnt, element) => {
-            text = $(element).text()
-            cleantext = text.replace("\\n", "").replace(/[\s]*$/, "")
-            data[rowcnt][titles[spancnt]] = cleantext;
+        // Find the columns and ignore empty ones
+        var columns = $(row).find("td");
+        if (columns.text() == "") return;
+        // Ignore columns that include "Keine Vertretungen" to have
+        // an empty array if there are no changes
+        if (columns.text().includes("Keine Vertretungen")) return;
+
+        columns.each((columncnt, column) => {
+            var text = $(column).text();
+            // Clean the text by removing new lines, tabs, ...
+            var cleantext = text.replace("\\n", "").replace(/[\s]*$/, "");
+            var columntitle = titles[columncnt];
+
+            // Reformat date
+            if (columntitle == "datum") {
+                if (!cleantext) return;
+                // Use the year from the title
+                cleantext += infos.date.split("-")[0];
+                // Change date string (ex. 1.10.2021 to 2021-10-01)
+                cleantext = cleantext.split(".").reverse().map(x => (x.length < 2) ? "0" + x : x).join("-");
+            }
+
+            rowData[columntitle] = cleantext;
         })
 
-        rowcnt++;
+        data.push(rowData);
     });
+
     infos.changes = data;
-
-    data.forEach((element) => {
-        let data = element.datum;
-        element.datum = "";
-
-        data = data.split(".")
-
-        element.datum += new Date().getFullYear() + "-"
-        element.datum += data[1] + "-"
-        element.datum += data[0]
-    })
-
-    return data;
+    return infos;
 }
 
 module.exports = {
