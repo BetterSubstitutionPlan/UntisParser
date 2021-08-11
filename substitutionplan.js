@@ -29,22 +29,25 @@ function parse(html) {
 
         columns.each((columncnt, column) => {
             var text = $(column).text();
-            text = $(column).text()
-            cleantext = text.replace("\\n", "").replace(/[\s]*$/, "")
-            rowData[titles[columncnt]] = cleantext;
+            var cleantext = text.replace("\\n", "").replace(/[\s]*$/, "");
+            var columntitle = titles[columncnt];
+
+            // Reformat date
+            if (columntitle == "datum") {
+                if (!cleantext) return;
+                // Use the year from the title
+                cleantext += infos.date.split("-")[0];
+                // Change date string (ex. 1.10.2021 to 2021-10-01)
+                cleantext = cleantext.split(".").reverse().map(x => (x.length < 2) ? "0" + x : x).join("-");
+            }
+
+            rowData[columntitle] = cleantext;
         })
 
         data.push(rowData);
     });
+
     infos.changes = data;
-
-    // Reformat date
-    data.forEach(element => {
-        if(!element.datum) return;
-        element.datum += infos.date.split("-")[0]
-        element.datum = element.datum.split(".").reverse().map(x => (x.length < 2) ? "0" + x : x).join("-")
-    })
-
     return infos;
 }
 
