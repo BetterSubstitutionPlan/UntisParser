@@ -8,30 +8,33 @@ function parse(html) {
     var $ = cheerio.load(html);
 
     // Extract the date, weekday and a/b week from the title
-    title = $('.mon_title').text().split(" ");
-    infos.date = title[0].split(".").reverse().map(x => (x.length < 2) ? "0" + x : x).join("-")
-    infos.day = title[1].replace(",", "")
-    infos.week = title[3]
+    var title = $('.mon_title').text().split(" ");
+    infos.date = title[0].split(".").reverse().map(x => (x.length < 2) ? "0" + x : x).join("-");
+    infos.day = title[1].replace(",", "");
+    infos.week = title[3];
 
     // Get the export timestamp
     infos.timestamp = $('.mon_head td').text().split("Stand: ")[1].replace(/[\s\n]*$/g, "");
 
     var data = [];
+    var list = $('table.mon_list tr.list');
     list = $('table.mon_list tr.list');
     list.each((rowcnt, row) => {
         var rowData = {};
 
         var columns = $(row).find("td")
+        var columns = $(row).find("td");
         if (columns.text() == "") return;
         if (columns.text().includes("Keine Vertretungen")) return;
 
         columns.each((columncnt, column) => {
+            var text = $(column).text();
             text = $(column).text()
             cleantext = text.replace("\\n", "").replace(/[\s]*$/, "")
             rowData[titles[columncnt]] = cleantext;
         })
 
-        data.push(rowData)
+        data.push(rowData);
     });
     infos.changes = data;
 
